@@ -16,13 +16,12 @@ We use a dual primal method for the 3D assignment problem.
 
 
 ### Subgradient Method
-The following subgradient method for the Lagrange multipliers gave strong results.
+The following subgradient method for the Lagrange multipliers gave the strongest results.
 We use a modified Polyak step size with Nesterov acceleration.
 
 $$x^{k+1} = x^k - \alpha_k \partial f(x^k + \beta(x^k - x^{k-1})) + \beta(x^k - x^{k-1})
 $$
-where $$
-\alpha_k = \frac{\lambda((\text{dual value})_k - (\text{best value}))}{k\norm{\partial f(x^k + \beta(x^k - x^{k-1})}_2^2}\end{equation}$$
+where $$\alpha_k = \frac{\lambda((\text{dual value})_k - (\text{best value}))}{k\|\partial f(x^k + \beta(x^k - x^{k-1})\|_2^2}$$
 where we took the parameter $\beta = 0.95$
 and $\lambda$ is a hyperparameter which was found to give good results with $\lambda = 0.1$.
 ### Parameter Comparison
