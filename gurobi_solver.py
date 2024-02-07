@@ -2,7 +2,6 @@ import gurobipy as gp
 from gurobipy import GRB
 import json
 
-
 class GurobiSolver:
     def __init__(self, address):
         with open(address) as f:
@@ -55,5 +54,6 @@ class GurobiSolver:
         model.Params.outputFlag = 0  # Disable Gurobi output
 
         model.optimize()
-
-        return model.objVal
+        
+        selected_indices = [(i, j, k) for i in range(N) for j in range(N) for k in range(N) if x[i][j][k].x == 1]
+        return model.objVal, selected_indices
