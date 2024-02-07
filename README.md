@@ -90,4 +90,4 @@ learning_rate_2=0.1
 max_iterations_2=1000
 threshold_2=0.05
 ```
-![Parameter Image](output_14_0.png)
+![Parameter Image](compare_25.png)
