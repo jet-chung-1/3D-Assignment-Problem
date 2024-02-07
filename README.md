@@ -10,9 +10,10 @@ We use a dual primal method for the 3D assignment problem.
 ### Solver Comparison
 
 - We benchmarked our solver against Gurobi and PuLP: across many problem sizes and instances, our solver is shown to give a highly significant speed-up. 
-- We halt our solver within 1000 iterations or when we are within 5% of optimal. 
+- We halt our solver within 1000 iterations or when we are within 5% of optimal.
+- Cost matrix entries are chosen uniformly in the range $[0, 100]$ and all solvers run on the same problems for a given benchmarking instance.
 
-Large Size Problem: Size 35
+#### Large Size Problem: Size 35
 ```
 Created 5 problem instances for size 35.
 ----------
@@ -43,7 +44,7 @@ Avg. execution time for PuLP Solver: 169.1876 seconds
 ```
 ![Comparison Image Large](35.png)
 
-Medium Size Problem: Size 20
+#### Medium Size Problem: Size 20
 
 ![Comparison Image](output_11_1.png)
 
@@ -62,13 +63,13 @@ and $\lambda$ is a hyperparameter which was found to give good results with $\la
 The following parameters were found to give good performance across many problem sizes and instances.
 
 ```
-learning_rate_scale_1="1/k"
-algorithm_1="nesterov"
-beta_1=0.95
-search_size_1=10
-learning_rate_1=0.1
-max_iterations_1=1000
-threshold_1=0.05
+learning_rate_scale="1/k"
+algorithm="nesterov"
+beta=0.95
+search_size=10
+learning_rate=0.1
+max_iterations=1000
+threshold=0.05
 ```
 Here we display comparison of our solver with parameter values
 

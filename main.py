@@ -12,7 +12,7 @@ class Solver:
 
         Parameters:
             u: numpy array
-                Point in the dual space.
+                Lagrange multiplier.
 
         Returns:
             dual_value: float
