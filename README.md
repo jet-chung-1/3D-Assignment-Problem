@@ -10,7 +10,8 @@ We use a dual primal method for the 3D assignment problem.
 ### Solver Comparison
 
 - We benchmarked our solver against Gurobi and PuLP: across many problem sizes and instances, our solver is shown to give a highly significant speed-up. 
-- We halt our solver within 1000 iterations or when we are within 5% of optimal. 
+- We halt our solver within 1000 iterations or when we are within 5% of optimal.
+- Cost matrix entries are chosen uniformly in the range $[0, 100]$ and all solvers run on the same problems for a given benchmarking instance.
 
 #### Large Size Problem: Size 35
 ```
