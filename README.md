@@ -62,13 +62,13 @@ and $\lambda$ is a hyperparameter which was found to give good results with $\la
 The following parameters were found to give good performance across many problem sizes and instances.
 
 ```
-learning_rate_scale_1="1/k"
-algorithm_1="nesterov"
-beta_1=0.95
-search_size_1=10
-learning_rate_1=0.1
-max_iterations_1=1000
-threshold_1=0.05
+learning_rate_scale="1/k"
+algorithm="nesterov"
+beta=0.95
+search_size=10
+learning_rate=0.1
+max_iterations=1000
+threshold=0.05
 ```
 Here we display comparison of our solver with parameter values
 
