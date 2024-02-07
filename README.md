@@ -12,6 +12,39 @@ We use a dual primal method for the 3D assignment problem.
 - We benchmarked our solver against Gurobi and PuLP: across many problem sizes and instances, our solver is shown to give a highly significant speed-up. 
 - We halt our solver within 1000 iterations or when we are within 5% of optimal. 
 
+Large Size Problem: Size 35
+```
+Created 5 problem instances for size 35.
+----------
+Benchmarking Custom Solver:
+Objective Value: 3359.66, Duality % Gap: 3.98%
+Objective Value: 3334.68, Duality % Gap: 4.76%
+Objective Value: 3377.99, Duality % Gap: 3.44%
+Objective Value: 3346.59, Duality % Gap: 4.41%
+Objective Value: 3229.39, Duality % Gap: 8.20%
+Avg. execution time for Custom Solver: 0.4742 seconds
+Percentage of time fraction < 5.00%: 80.00%
+----------
+Benchmarking Gurobi Solver:
+Objective Value: 3491.35
+Objective Value: 3491.90
+Objective Value: 3492.49
+Objective Value: 3492.37
+Objective Value: 3492.92
+Avg. execution time for Gurobi Solver: 19.7722 seconds
+----------
+Benchmarking PuLP Solver:
+Objective Value: 3491.35
+Objective Value: 3491.97
+Objective Value: 3492.59
+Objective Value: 3492.44
+Objective Value: 3492.92
+Avg. execution time for PuLP Solver: 169.1876 seconds
+```
+![Comparison Image Large](35.png)
+
+Medium Size Problem: Size 20
+
 ![Comparison Image](output_11_1.png)
 
 
