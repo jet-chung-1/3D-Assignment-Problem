@@ -4,8 +4,7 @@ We use a dual primal method for the 3D assignment problem.
 
 ## Functionality
 
- We apply a Lagrangian relaxation to relax the problem to a 2D assignment problem which provides dual bounds, then reconstruct primal bounds. We then use a modified subgradient method with Polyak step sizes and Nesterov acceleration, which was shown to give strong results as compared to commercial solvers.  
-
+ We apply a Lagrangian relaxation to relax the problem to a 2D assignment problem which provides dual bounds, then reconstruct primal bounds. We then use a modified subgradient method with Polyak step sizes and Nesterov acceleration, which was shown to give strong results as compared to commercial solvers. The Jupyter notebooks display additional functionality.
 
 ### Solver Comparison
 
@@ -42,11 +41,11 @@ Objective Value: 3492.44
 Objective Value: 3492.92
 Avg. execution time for PuLP Solver: 169.1876 seconds
 ```
-![Comparison Image Large](35.png)
+![Comparison Image Large](img/35.png)
 
 #### Medium Size Problem: Size 20
 
-![Comparison Image](output_11_1.png)
+![Comparison Image](img/output_11_1.png)
 
 
 ### Subgradient Method
@@ -91,4 +90,4 @@ learning_rate_2=0.1
 max_iterations_2=1000
 threshold_2=0.05
 ```
-![Parameter Image](compare_25.png)
+![Parameter Image](img/compare_25.png)
