@@ -6,17 +6,45 @@ This repository provides a Python implementation of a dual-primal method for sol
 
 The solver applies a Lagrangian relaxation technique to relax the 3D assignment problem to a 2D assignment problem, providing dual bounds. It then reconstructs primal bounds using a modified subgradient method with Polyak step sizes and Nesterov acceleration. The Jupyter notebooks in this repository demonstrate additional functionality and usage examples.
 
-## Usage
-
+### Usage
+If we just want a solution using the default parameters, we can use the following code on a specified cost matrix C: 
 ```python
-solver = Solver(learning_rate_scale="1/k", algorithm="nesterov", beta=0.95, search_size=10, learning_rate=0.1, max_iterations=1000, threshold=0.05) # all parameters are optional and the displayed parameters are the defaults
-dual_bounds, primal_bounds, best_sol, best_value, delta, fraction = solver.optimize(C) # C is a given cost matrix
+solver = Solver()
+_, _, best_sol, best_value, _, _ = solver.optimize(C) 
 ```
 
-### Primal-Dual
+We can also set parameters for the solver; the ones displayed below are the defaults, and were found to give good performance across many problem sizes and instances. 
+```python
+learning_rate_scale="1/k"
+algorithm="nesterov"
+beta=0.95
+search_size=10
+learning_rate=0.1
+max_iterations=1000
+threshold=0.05
+
+solver = Solver(learning_rate_scale, algorithm, beta, search_size, learning_rate, max_iterations, threshold) # all are optional 
+dual_bounds, primal_bounds, best_sol, best_value, delta, fraction = solver.optimize(C) 
+```
+
+Above, delta is the duality gap, and fraction is a guarantee on the maximum error between the best value found and the true best value.
+
+### Subgradient Method
+The following subgradient method for the Lagrange multipliers gave the strongest results.
+We use a modified Polyak step size with Nesterov acceleration.
+
+$$x^{k+1} = x^k - \alpha_k \partial f(x^k + \beta(x^k - x^{k-1})) + \beta(x^k - x^{k-1})
+$$
+where $$\alpha_k = \frac{\lambda((\text{dual value})_k - (\text{best value}))}{k\|\partial f(x^k + \beta(x^k - x^{k-1})\|_2^2}$$
+where we took the parameter $\beta = 0.95$
+and $\lambda$ is a hyperparameter which was found to give good results with $\lambda = 0.1$.
+
+### Primal-Dual Bounds
+The image below displays the convergence of the dual and primal bounds. By comparison to exact solvers, we have observed that the dual bounds converge very quickly to the best value, while the primal bounds tend to be somewhat stagnant. This suggests finding a better primal construction method will lead to more precise bounds and faster convergence.
+
 ![Dual Primal comparison](img/dual-primal.png)
 
-### Solver Comparison
+## Solver Comparison
 
 - The solver has been benchmarked against Gurobi and PuLP. Across various problem sizes and instances, our solver consistently demonstrates a significant speed-up.
 - The solver halts within 1000 iterations or when it approaches within 5% of optimal.
@@ -122,27 +150,3 @@ Avg. execution time for GurobiSolver_4: 4.4943 seconds
 ![Comparison Image All](img/compare_25_new.png)
 
 ![Comparison Image Custom Solvers](img/compare_25_custom.png)
-
-
-### Subgradient Method
-The following subgradient method for the Lagrange multipliers gave the strongest results.
-We use a modified Polyak step size with Nesterov acceleration.
-
-$$x^{k+1} = x^k - \alpha_k \partial f(x^k + \beta(x^k - x^{k-1})) + \beta(x^k - x^{k-1})
-$$
-where $$\alpha_k = \frac{\lambda((\text{dual value})_k - (\text{best value}))}{k\|\partial f(x^k + \beta(x^k - x^{k-1})\|_2^2}$$
-where we took the parameter $\beta = 0.95$
-and $\lambda$ is a hyperparameter which was found to give good results with $\lambda = 0.1$.
-### Parameter Comparison
-
-The following parameters were found to give good performance across many problem sizes and instances.
-
-```
-learning_rate_scale="1/k"
-algorithm="nesterov"
-beta=0.95
-search_size=10
-learning_rate=0.1
-max_iterations=1000
-threshold=0.05
-```
