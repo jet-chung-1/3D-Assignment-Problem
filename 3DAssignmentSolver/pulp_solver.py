@@ -42,4 +42,5 @@ class PulpSolver:
             for j in range(N)
             for k in range(N)
         ).value()
-        return val
+
+        return val, None # just for ease of utils

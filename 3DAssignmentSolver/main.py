@@ -3,9 +3,28 @@ from scipy.optimize import linear_sum_assignment
 
 
 class Solver:
-    def __init__(self, verbosity = False):
-        self.verbosity = verbosity # will add some more output later
+    def __init__(self,learning_rate_scale="constant",
+        algorithm="nesterov",
+        beta=0.95,
+        search_size=10,
+        learning_rate=0.1,
+        max_iterations=200,
+        threshold=0.05,
+        verbosity = False):
+        
+        self._learning_rate_scale = learning_rate_scale
+        self._beta = beta
+        self._search_size = search_size
+        self._algorithm = algorithm
+        self._learning_rate = learning_rate
+        self._max_iterations = max_iterations
+        self._threshold = threshold
+        self._verbosity = verbosity # will add some more output later
 
+    @property
+    def threshold(self):
+        return self._threshold
+    
     def objective_func(self, u):
         """
         Objective function for optimization.
@@ -104,12 +123,12 @@ class Solver:
             learning_rate: float
                 Learning rate.
         """
-        if self.learning_rate_scale == "constant":
-            return self.learning_rate
-        elif self.learning_rate_scale == "1/k":
-            return self.learning_rate / (k + 1)
-        elif self.learning_rate_scale == "1/sqrt(k)":
-            return self.learning_rate / np.sqrt(k + 1)
+        if self._learning_rate_scale == "constant":
+            return self._learning_rate
+        elif self._learning_rate_scale == "1/k":
+            return self._learning_rate / (k + 1)
+        elif self._learning_rate_scale == "1/sqrt(k)":
+            return self._learning_rate / np.sqrt(k + 1)
         else:
             raise ValueError("Invalid learning rate scale specified.")
 
@@ -152,7 +171,7 @@ class Solver:
         fraction = delta / best_value
 
         # Main optimization loop
-        while fraction > self.threshold and k < self.max_iterations:
+        while fraction > self._threshold and k < self._max_iterations:
             # Compute dual objective value and primal solution
             dual_value, x_point = self.objective_func(u)
             primal_construction = self.construct(x_point)
@@ -220,10 +239,10 @@ class Solver:
 
         fraction = delta / best_value
 
-        beta = self.beta
+        beta = self._beta
 
         # Main optimization loop
-        while fraction > self.threshold and k < self.max_iterations:
+        while fraction > self._threshold and k < self._max_iterations:
             # Compute dual objective value and primal solution
             dual_value, x_point = self.objective_func(y)
             primal_construction = self.construct(x_point)
@@ -301,29 +320,15 @@ class Solver:
     def optimize(
         self,
         C,
-        learning_rate_scale="constant",
-        algorithm="nesterov",
-        beta=0.95,
-        search_size=10,
-        learning_rate=0.1,
-        max_iterations=200,
-        threshold=0.05,
     ):
         self.C = C
-        self.learning_rate_scale = learning_rate_scale
-        self.beta = beta
-        self.search_size = search_size
-        self.algorithm = algorithm
         self.N = C.shape[0]
-        self.learning_rate = learning_rate
-        self.max_iterations = max_iterations
-        self.threshold = threshold
 
         # Check if algorithm is valid
         allowed_algorithms = ["subgradient", "nesterov"]
-        if self.algorithm not in allowed_algorithms:
+        if self._algorithm not in allowed_algorithms:
             raise ValueError(
-                f"Invalid algorithm '{self.algorithm}'. Please choose from: {allowed_algorithms}"
+                f"Invalid algorithm '{self._algorithm}'. Please choose from: {allowed_algorithms}"
             )
         """
         Optimize the objective function using the selected algorithm.
@@ -361,11 +366,11 @@ class Solver:
                 Fraction of delta over best_value.
         """
 
-        initial_point = np.random.uniform(-self.search_size, self.search_size, self.N)
-        if self.algorithm == "subgradient":                
+        initial_point = np.random.uniform(-self._search_size, self._search_size, self.N)
+        if self._algorithm == "subgradient":                
             return self.subgradient_algorithm(initial_point)
-        elif self.algorithm == "nesterov":
+        elif self._algorithm == "nesterov":
             return self.nesterov_accelerated_gradient(initial_point)
         else:
-            raise ValueError(f"Invalid algorithm '{self.algorithm}'. Please choose from: ['subgradient', 'nesterov']")
+            raise ValueError(f"Invalid algorithm '{self._algorithm}'. Please choose from: ['subgradient', 'nesterov']")
         
