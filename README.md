@@ -1,51 +1,127 @@
 # 3D Assignment Problem
 
-We use a dual primal method for the 3D assignment problem.
+This repository provides a Python implementation of a dual-primal method for solving the 3D assignment problem.
 
 ## Functionality
 
- We apply a Lagrangian relaxation to relax the problem to a 2D assignment problem which provides dual bounds, then reconstruct primal bounds. We then use a modified subgradient method with Polyak step sizes and Nesterov acceleration, which was shown to give strong results as compared to commercial solvers. The Jupyter notebooks display additional functionality.
+The solver applies a Lagrangian relaxation technique to relax the 3D assignment problem to a 2D assignment problem, providing dual bounds. It then reconstructs primal bounds using a modified subgradient method with Polyak step sizes and Nesterov acceleration. The Jupyter notebooks in this repository demonstrate additional functionality and usage examples.
+
+## Usage
+
+```python
+solver = Solver(learning_rate_scale="1/k", algorithm="nesterov", beta=0.95, search_size=10, learning_rate=0.1, max_iterations=1000, threshold=0.05) # all parameters are optional and the displayed parameters are the defaults
+dual_bounds, primal_bounds, best_sol, best_value, delta, fraction = solver.optimize(C) # C is a given cost matrix
+```
+
+### Primal-Dual
+![Dual Primal comparison](img/dual-primal.png)
 
 ### Solver Comparison
 
-- We benchmarked our solver against Gurobi and PuLP: across many problem sizes and instances, our solver is shown to give a highly significant speed-up. 
-- We halt our solver within 1000 iterations or when we are within 5% of optimal.
-- Cost matrix entries are chosen uniformly in the range $[0, 100]$ and all solvers run on the same problems for a given benchmarking instance.
+- The solver has been benchmarked against Gurobi and PuLP. Across various problem sizes and instances, our solver consistently demonstrates a significant speed-up.
+- The solver halts within 1000 iterations or when it approaches within 5% of optimal.
+- For the tests, cost matrix entries are uniformly chosen from the range [0, 100], and all solvers run on the same problems for a given benchmarking instance.
 
-#### Large Size Problem: Size 35
+A benchmarking utility is provided to facilitate easy comparison between different solvers. Here is an example:
+```python
+N = 25
+num_problems = 10
+
+solver1 = Solver(learning_rate_scale="1/k", algorithm="nesterov", beta=0.95, search_size=10, learning_rate=0.1, max_iterations=1000, threshold=0.05)
+solver2 = Solver(learning_rate_scale="constant", algorithm="subgradient", beta=0, search_size=10, learning_rate=0.1, max_iterations=1000, threshold=0.05)
+solver3 = PulpSolver()
+solver4 = GurobiSolver()
+
+solvers = [solver1, solver2, solver3, solver4]
+problems = create_problems(N, num_problems, verbosity = True)
+
+df = benchmark(problems, solvers, verbosity = True)
 ```
-Created 5 problem instances for size 35.
-----------
-Benchmarking Custom Solver:
-Objective Value: 3359.66, Duality % Gap: 3.98%
-Objective Value: 3334.68, Duality % Gap: 4.76%
-Objective Value: 3377.99, Duality % Gap: 3.44%
-Objective Value: 3346.59, Duality % Gap: 4.41%
-Objective Value: 3229.39, Duality % Gap: 8.20%
-Avg. execution time for Custom Solver: 0.4742 seconds
-Percentage of time fraction < 5.00%: 80.00%
-----------
-Benchmarking Gurobi Solver:
-Objective Value: 3491.35
-Objective Value: 3491.90
-Objective Value: 3492.49
-Objective Value: 3492.37
-Objective Value: 3492.92
-Avg. execution time for Gurobi Solver: 19.7722 seconds
-----------
-Benchmarking PuLP Solver:
-Objective Value: 3491.35
-Objective Value: 3491.97
-Objective Value: 3492.59
-Objective Value: 3492.44
-Objective Value: 3492.92
-Avg. execution time for PuLP Solver: 169.1876 seconds
+
 ```
-![Comparison Image Large](img/35.png)
+--------------------------------------------------
+Created 10 problem instances for size 25 with scale=100.
+Using a uniform distribution (beta = (1, 1)).
+--------------------------------------------------
 
-#### Medium Size Problem: Size 20
 
-![Comparison Image](img/output_11_1.png)
+--------------------------------------------------
+Benchmarking CustomSolver_1 Solver:
+--------------------------------------------------
+Instance 1: Objective Value: 2374.34, Duality % Gap: 4.89%
+Instance 2: Objective Value: 2385.58, Duality % Gap: 4.48%
+Instance 3: Objective Value: 2404.48, Duality % Gap: 3.54%
+Instance 4: Objective Value: 2350.59, Duality % Gap: 5.90%
+Instance 5: Objective Value: 2388.74, Duality % Gap: 4.26%
+Instance 6: Objective Value: 2381.01, Duality % Gap: 4.58%
+Instance 7: Objective Value: 2412.95, Duality % Gap: 3.26%
+Instance 8: Objective Value: 2382.74, Duality % Gap: 4.63%
+Instance 9: Objective Value: 2406.09, Duality % Gap: 3.54%
+Instance 10: Objective Value: 2409.09, Duality % Gap: 3.41%
+--------------------------------------------------
+Avg. execution time for CustomSolver_1: 0.3243 seconds
+Percentage of time fraction < 5.00%: 90.00%
+--------------------------------------------------
+
+
+--------------------------------------------------
+Benchmarking CustomSolver_2 Solver:
+--------------------------------------------------
+Instance 1: Objective Value: 2354.07, Duality % Gap: 5.83%
+Instance 2: Objective Value: 2387.98, Duality % Gap: 4.40%
+Instance 3: Objective Value: 2404.48, Duality % Gap: 3.55%
+Instance 4: Objective Value: 2337.77, Duality % Gap: 6.51%
+Instance 5: Objective Value: 2388.34, Duality % Gap: 4.26%
+Instance 6: Objective Value: 2387.40, Duality % Gap: 4.33%
+Instance 7: Objective Value: 2347.97, Duality % Gap: 6.16%
+Instance 8: Objective Value: 2397.13, Duality % Gap: 4.02%
+Instance 9: Objective Value: 2380.79, Duality % Gap: 4.65%
+Instance 10: Objective Value: 2442.47, Duality % Gap: 1.99%
+--------------------------------------------------
+Avg. execution time for CustomSolver_2: 0.5283 seconds
+Percentage of time fraction < 5.00%: 70.00%
+--------------------------------------------------
+
+
+--------------------------------------------------
+Benchmarking PulpSolver_3 Solver:
+--------------------------------------------------
+Instance 1: Objective Value: 2488.54
+Instance 2: Objective Value: 2490.63
+Instance 3: Objective Value: 2488.17
+Instance 4: Objective Value: 2487.37
+Instance 5: Objective Value: 2487.77
+Instance 6: Objective Value: 2488.48
+Instance 7: Objective Value: 2489.48
+Instance 8: Objective Value: 2490.87
+Instance 9: Objective Value: 2488.72
+Instance 10: Objective Value: 2488.73
+--------------------------------------------------
+Avg. execution time for PulpSolver_3: 8.7062 seconds
+--------------------------------------------------
+
+
+--------------------------------------------------
+Benchmarking GurobiSolver_4 Solver:
+--------------------------------------------------
+Instance 1: Objective Value: 2488.54
+Instance 2: Objective Value: 2490.63
+Instance 3: Objective Value: 2488.08
+Instance 4: Objective Value: 2487.37
+Instance 5: Objective Value: 2487.77
+Instance 6: Objective Value: 2488.48
+Instance 7: Objective Value: 2489.48
+Instance 8: Objective Value: 2490.87
+Instance 9: Objective Value: 2488.72
+Instance 10: Objective Value: 2488.73
+--------------------------------------------------
+Avg. execution time for GurobiSolver_4: 4.4943 seconds
+--------------------------------------------------
+```
+
+![Comparison Image All](img/compare_25_new.png)
+
+![Comparison Image Custom Solvers](img/compare_25_custom.png)
 
 
 ### Subgradient Method
@@ -70,24 +146,3 @@ learning_rate=0.1
 max_iterations=1000
 threshold=0.05
 ```
-Here we display comparison of our solver with parameter values
-
-```
-learning_rate_scale_1="1/k"
-algorithm_1="nesterov"
-beta_1=0.95
-search_size_1=10
-learning_rate_1=0.1
-max_iterations_1=1000
-threshold_1=0.05
-
-
-learning_rate_scale_2="constant"
-algorithm_2="subgradient"
-beta_2=0
-search_size_2=10
-learning_rate_2=0.1
-max_iterations_2=1000
-threshold_2=0.05
-```
-![Parameter Image](img/compare_25.png)

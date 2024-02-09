@@ -1,17 +1,35 @@
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 
-
 class Solver:
-    def __init__(self,learning_rate_scale="constant",
+    """
+    Solver class for 3D assignment problem using dual-primal method.
+    """
+
+    def __init__(
+        self,
+        learning_rate_scale="1/k",
         algorithm="nesterov",
         beta=0.95,
         search_size=10,
         learning_rate=0.1,
-        max_iterations=200,
+        max_iterations=1000,
         threshold=0.05,
-        verbosity = False):
-        
+        verbosity=False,
+    ):
+        """
+        Initialize the Solver object with specified parameters.
+
+        Parameters:
+            learning_rate_scale (str, optional): Scale factor for learning rate. Default is "constant".
+            algorithm (str, optional): Optimization algorithm to use. Default is "nesterov".
+            beta (float, optional): Beta parameter for Nesterov's accelerated gradient descent. Default is 0.95.
+            search_size (int, optional): Search size for optimization. Default is 10.
+            learning_rate (float, optional): Initial learning rate. Default is 0.1.
+            max_iterations (int, optional): Maximum number of iterations. Default is 200.
+            threshold (float, optional): Convergence threshold. Default is 0.05.
+            verbosity (bool, optional): Whether to print additional information during execution. Default is False.
+        """
         self._learning_rate_scale = learning_rate_scale
         self._beta = beta
         self._search_size = search_size
@@ -19,10 +37,16 @@ class Solver:
         self._learning_rate = learning_rate
         self._max_iterations = max_iterations
         self._threshold = threshold
-        self._verbosity = verbosity # will add some more output later
+        self._verbosity = verbosity
 
     @property
     def threshold(self):
+        """
+        Get the convergence threshold.
+
+        Returns:
+            float: Convergence threshold.
+        """
         return self._threshold
     
     def objective_func(self, u):
@@ -317,10 +341,22 @@ class Solver:
         return np.sum(self.C * x)
     
 
-    def optimize(
-        self,
-        C,
-    ):
+ 
+    def optimize(self, C):
+        """
+        Optimize the objective function using the selected algorithm.
+
+        Parameters:
+            C (numpy.array): Cost matrix.
+
+        Returns:
+            dual_bounds (list): Dual objective values.
+            primal_bounds (list): Primal objective values.
+            best_sol (numpy.array): Best primal solution found.
+            best_value (float): Best primal objective value found.
+            delta (float): Difference between dual and primal objective values.
+            fraction (float): Fraction of delta over best_value.
+        """
         self.C = C
         self.N = C.shape[0]
 
@@ -330,42 +366,7 @@ class Solver:
             raise ValueError(
                 f"Invalid algorithm '{self._algorithm}'. Please choose from: {allowed_algorithms}"
             )
-        """
-        Optimize the objective function using the selected algorithm.
-
-         Parameters:
-            C: numpy array
-                Cost matrix.
-            learning_rate_scale: str, optional
-                Scale factor for learning rate. Default is "constant".
-            algorithm: str, optional
-                Optimization algorithm to use. Default is "nesterov".
-            beta: float, optional
-                Beta parameter for Nesterov's accelerated gradient descent. Default is 0.95.
-            search_size: int, optional
-                Search size for optimization. Default is 10.
-            learning_rate: float, optional
-                Initial learning rate. Default is 0.1.
-            max_iterations: int, optional
-                Maximum number of iterations. Default is 200.
-            threshold: float, optional
-                Convergence threshold. Default is 0.05.
-
-        Returns:
-            dual_bounds: list
-                Dual objective values.
-            primal_bounds: list
-                Primal objective values.
-            best_sol: numpy array
-                Best primal solution found.
-            best_value: float
-                Best primal objective value found.
-            delta: float
-                Difference between dual and primal objective values.
-            fraction: float
-                Fraction of delta over best_value.
-        """
-
+  
         initial_point = np.random.uniform(-self._search_size, self._search_size, self.N)
         if self._algorithm == "subgradient":                
             return self.subgradient_algorithm(initial_point)
@@ -374,3 +375,4 @@ class Solver:
         else:
             raise ValueError(f"Invalid algorithm '{self._algorithm}'. Please choose from: ['subgradient', 'nesterov']")
         
+       
