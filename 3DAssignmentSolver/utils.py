@@ -93,7 +93,7 @@ def benchmark(problems, solvers, verbosity=True):
 
         avg_time = np.mean(solver_times[solver_name])
         if isinstance(solver, Solver):
-            percentage_below_threshold = (sum(fraction < solver._threshold for fraction in fractions) / len(problems)) * 100
+            percentage_below_threshold = (sum(fraction <= solver._threshold for fraction in fractions) / len(problems)) * 100
             if verbosity:
                 print(f"{'-' * 50}")
                 print(f"Avg. execution time for {solver_name}: {avg_time:.4f} seconds")
@@ -137,3 +137,26 @@ def duality_visualizer(dual_bounds, primal_bounds, figsize=(8, 6)):
 
     plt.legend()
     plt.show()
+
+
+def is_feasible(self, x):
+    """
+    Check if a given solution is feasible.
+
+    Parameters:
+        x: numpy array
+            Primal solution to be checked.
+
+    Returns:
+        bool: True if feasible, False otherwise.
+    """
+    if not np.all(np.sum(x, axis=(1, 2)) == 1):
+        return False
+
+    if not np.all(np.sum(x, axis=(0, 2)) == 1):
+        return False
+
+    if not np.all(np.sum(x, axis=(0, 1)) == 1):
+        return False
+    
+    return True

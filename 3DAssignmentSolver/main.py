@@ -16,6 +16,8 @@ class Solver:
         max_iterations=1000,
         threshold=0.05,
         verbosity=False,
+        local_search=True,
+        local_search_all=False
     ):
         """
         Initialize the Solver object with specified parameters.
@@ -38,6 +40,8 @@ class Solver:
         self._max_iterations = max_iterations
         self._threshold = threshold
         self._verbosity = verbosity
+        self._local_search = local_search
+        self._local_search_all = local_search_all
 
     @property
     def threshold(self):
@@ -113,7 +117,82 @@ class Solver:
         y = np.zeros((self.N, self.N, self.N), dtype=int)
         y[np.arange(self.N), J, k_indices] = 1
 
-        return y
+
+        if self._local_search_all:
+            y_local = self.local_constructor(x)
+            if y_local is not None and self.value(y_local) > self.value(y):
+                return y_local
+        else:
+            return y
+    
+    def local_constructor(self, x):
+        ct = 0 
+        while ct < self.N:
+            S = np.sum(x, axis=(0, 1))
+            A = np.where(S == 0)[0]
+            B = np.where(S > 1)[0]
+            E = np.where(S == 1)[0]
+    #         print(f" < 1: {A}, > 1: {B}, = 1 {E}")
+            if len(A) == 0:
+                break 
+            else:
+                D = np.full((self.N, self.N), -np.inf)
+                argmax_diff = np.full((self.N, self.N, 2), -np.inf)  # 3D array to store indices (i, j, k, l)
+                for i in range(self.N):
+                    for j in range(self.N):
+                        A = np.where((x[i, j, :] == 0) & (S == 0))[0] # Get the indices where both x and S are 0
+                        B = np.where((x[i, j, :] > 0) & (S > 1))[0]   # Get the indices where x > 0 and S > 1
+                        if len(A) > 0 and len(B) > 0:
+                            max_diff = -np.inf
+                            for k in A:
+                                for l in B:
+                                    diff = self.C[i, j, k] - self.C[i, j, l]
+                                    if diff > max_diff:
+                                        max_diff = diff
+                                        argmax_diff[i, j] = [k, l]  # Store the indices of the maximizing values
+                            D[i, j] = max_diff
+
+                i, j = np.unravel_index(np.argmax(D), (self.N,self.N))
+                k, l = argmax_diff[i,j]
+                x[i, j, int(k)] = 1
+                x[i, j, int(l)] = 0
+
+    #             print(f"swap {i,j,k} <- 1, {i, j, l} <- 0")
+    #             print(f"change by {C[i,j,int(k)] - C[i,j,int(l)]}" )
+                
+    #             print("-"*50)
+                
+                ct += 1
+        
+        if self.is_feasible(x):
+            return x
+        else:
+            return None
+            
+    # still need to numpy this all    
+    def local_construct(self):
+    
+        # just initial bound
+        u = np.zeros(self.N)
+        u = u.reshape(1, 1, -1)
+        sum_C_u = self.C + u
+        
+        max_indices = np.argmax(sum_C_u, axis=-1)
+        D = sum_C_u[np.arange(self.N)[:, None], np.arange(self.N), max_indices]
+        K = max_indices.squeeze()
+
+        rows, cols = linear_sum_assignment(-D)
+
+        x = np.zeros((self.N, self.N, self.N), dtype=int)
+        x[rows, cols, K[rows, cols]] = 1
+
+    
+        sol = self.local_constructor(x)
+        val = self.value(sol)
+        
+        return val
+        
+  
 
     def subgrad_func(self, u):
         """
@@ -184,8 +263,16 @@ class Solver:
 
         # Compute initial dual objective value and primal solution
         dual_value, x_point = self.objective_func(u)
+
         best_sol = self.construct(x_point)
         best_value = self.value(best_sol)
+
+        # print("best-val: ", best_value)
+        if self._local_search:
+            local_construct_val = self.local_construct()
+            # print("local-val: ", local_construct_val)
+            if local_construct_val is not None and local_construct_val > best_value:
+                best_value = local_construct_val
 
         dual_bounds = [dual_value]
         primal_bounds = [best_value]
@@ -253,8 +340,17 @@ class Solver:
 
         # Compute initial dual objective value and primal solution
         dual_value, x_point = self.objective_func(u)
+
         best_sol = self.construct(x_point)
         best_value = self.value(best_sol)
+
+
+        # print("best-val: ", best_value)
+        if self._local_search:
+            local_construct_val = self.local_construct()
+            # print("local-val: ", local_construct_val)
+            if local_construct_val is not None and local_construct_val > best_value:
+                best_value = local_construct_val
 
         dual_bounds = [dual_value]
         primal_bounds = [best_value]
