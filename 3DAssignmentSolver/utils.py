@@ -6,7 +6,7 @@ import seaborn as sns
 
 from main import Solver
 
-def create_problems(N, num_problems, scale=100, beta=(1, 1), verbosity=True):
+def create_problems(N, num_problems, scale=100, a=1, b=1, verbosity=True):
     """
     Create random problem instances.
 
@@ -28,16 +28,16 @@ def create_problems(N, num_problems, scale=100, beta=(1, 1), verbosity=True):
     """
     problems = []
     for _ in range(num_problems):
-        C = np.random.beta(*beta, size=(N, N, N)) * scale  # Cost matrices are beta in [0, scale]
+        C = np.random.beta(a,b, size=(N, N, N)) * scale  # Cost matrices are beta in [0, scale]
         problems.append(C)
 
     if verbosity:
         print(f"{'-' * 50}")
-        if beta == (1, 1):
+        if a == 1 and b == 1:
             print(f"Created {num_problems} problem instances for size {N} with scale={scale}.")
             print("Using a uniform distribution (beta = (1, 1)).")
         else:
-            print(f"Created {num_problems} problem instances for size {N} with scale={scale} and beta={beta}.")
+            print(f"Created {num_problems} problem instances for size {N} with scale={scale} and beta={a,b}.")
         print(f"{'-' * 50}")
         print("\n")
 

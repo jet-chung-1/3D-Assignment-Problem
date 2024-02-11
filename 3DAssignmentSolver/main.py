@@ -252,10 +252,6 @@ class Solver:
                 Best primal solution found.
             best_value: float
                 Best primal objective value found.
-            delta: float
-                Difference between dual and primal objective values.
-            fraction: float
-                Fraction of delta over best_value.
         """
         # Initialize variables
         u = np.array(initial_point)
@@ -277,10 +273,8 @@ class Solver:
         dual_bounds = [dual_value]
         primal_bounds = [best_value]
 
-        delta = dual_value - best_value
-
-        fraction = delta / best_value
-
+        fraction = (dual_value - best_value) / best_value
+        
         # Main optimization loop
         while fraction > self._threshold and k < self._max_iterations:
             # Compute dual objective value and primal solution
@@ -293,9 +287,8 @@ class Solver:
                 best_value = primal_value
                 best_sol = primal_construction
 
-            # Update delta and fraction
-            delta = dual_value - best_value
-            fraction = delta / best_value
+            # Update fraction
+            fraction = (dual_value - best_value) / best_value
 
             dual_bounds.append(dual_value)
             primal_bounds.append(best_value)
@@ -308,7 +301,7 @@ class Solver:
 
             k += 1
 
-        return dual_bounds, primal_bounds, best_sol, best_value, delta, fraction 
+        return dual_bounds, primal_bounds, best_sol, best_value
 
     def nesterov_accelerated_gradient(self, initial_point):
         """
@@ -327,10 +320,6 @@ class Solver:
                 Best primal solution found.
             best_value: float
                 Best primal objective value found.
-            delta: float
-                Difference between dual and primal objective values.
-            fraction: float
-                Fraction of delta over best_value.
         """
         # Initialize variables
         u = np.array(initial_point)
@@ -355,9 +344,7 @@ class Solver:
         dual_bounds = [dual_value]
         primal_bounds = [best_value]
 
-        delta = dual_value - best_value
-
-        fraction = delta / best_value
+        fraction = (dual_value - best_value) / best_value
 
         beta = self._beta
 
@@ -373,9 +360,8 @@ class Solver:
                 best_value = primal_value
                 best_sol = primal_construction
 
-            # Update delta and fraction
-            delta = dual_value - best_value
-            fraction = delta / best_value
+            # Update and fraction
+            fraction = (dual_value - best_value) / best_value
 
             dual_bounds.append(dual_value)
             primal_bounds.append(best_value)
@@ -398,7 +384,7 @@ class Solver:
 
             k += 1
 
-        return dual_bounds, primal_bounds, best_sol, best_value, delta, fraction 
+        return dual_bounds, primal_bounds, best_sol, best_value
 
 
     def is_feasible(self, x):
@@ -450,8 +436,6 @@ class Solver:
             primal_bounds (list): Primal objective values.
             best_sol (numpy.array): Best primal solution found.
             best_value (float): Best primal objective value found.
-            delta (float): Difference between dual and primal objective values.
-            fraction (float): Fraction of delta over best_value.
         """
         self.C = C
         self.N = C.shape[0]
