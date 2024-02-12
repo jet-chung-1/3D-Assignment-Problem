@@ -34,6 +34,7 @@ def create_problems(N, num_problems, scale=100, a=1, b=1, verbosity=True):
         problems.append(C)
 
     if verbosity:
+        print("\n")
         print(f"{'-' * 50}")
         if a == 1 and b == 1:
             print(f"Created {num_problems} problem instances for size {N} with scale={scale}.")
@@ -81,7 +82,8 @@ def benchmark(problems, solvers, verbosity=True):
         for problem_index, problem in enumerate(problems, start=1):
             start_time = timeit.default_timer()
             if isinstance(solver, Solver):
-                _, primal_bounds, _, _, _, fraction = solver.optimize(problem)
+                dual_bounds, primal_bounds, _, _,  = solver.optimize(problem)
+                fraction = (dual_bounds[-1] - primal_bounds[-1])/primal_bounds[-1]
                 fractions.append(fraction)
                 if verbosity:
                     print(f"Instance {problem_index}: Objective Value: {primal_bounds[-1]:.2f}, Duality % Gap: {100 * fraction:.2f}%")
