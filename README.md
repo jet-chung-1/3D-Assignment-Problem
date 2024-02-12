@@ -39,7 +39,7 @@ and $\lambda$ is a hyperparameter which was found to give good results with $\la
 
 
 ### Local Search
-We implement a local search algorithm inspired from the 2-opt algorithm for TSP which finds very good primal solutions, often within $1-2%$ of the optimal value. Using an efficient linked class structure, this method adds very little overhead to the solution, and can solve even very large problems essentially instantly (N = 80 averages around 1.5 seconds). Below we display the convergence of the dual and primal bounds.
+We implement a local search algorithm inspired from the 2-opt algorithm for TSP which finds very good primal solutions, often within 1-2% of the optimal value. Using an efficient linked class structure, this method adds very little overhead to the solution, and can solve even very large problems essentially instantly (N = 80 averages around 1.5 seconds). Below we display the convergence of the dual and primal bounds.
 
 ![Local Search](img/local_search.png)
 
