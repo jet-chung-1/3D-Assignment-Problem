@@ -10,7 +10,7 @@ The solver applies a Lagrangian relaxation technique to relax the 3D assignment 
 If we just want a solution using the default parameters, we can use the following code on a specified cost matrix C: 
 ```python
 solver = Solver()
-_, _, best_sol, best_value, _, _ = solver.optimize(C) 
+_, _, best_sol, best_value = solver.optimize(C) 
 ```
 
 We can also set parameters for the solver; the ones displayed below are the defaults, and were found to give good performance across many problem sizes and instances. 
@@ -22,12 +22,11 @@ search_size=10
 learning_rate=0.1
 max_iterations=1000
 threshold=0.05
+op_solver = True
 
 solver = Solver(learning_rate_scale, algorithm, beta, search_size, learning_rate, max_iterations, threshold) # all are optional 
-dual_bounds, primal_bounds, best_sol, best_value, delta, fraction = solver.optimize(C) 
+dual_bounds, primal_bounds, best_sol, best_value = solver.optimize(C) 
 ```
-
-Above, delta is the duality gap, and fraction is a guarantee on the maximum error between the best value found and the true best value.
 
 ### Subgradient Method
 The following subgradient method for the Lagrange multipliers gave the strongest results.
@@ -41,8 +40,13 @@ and $\lambda$ is a hyperparameter which was found to give good results with $\la
 
 ### Primal-Dual Bounds
 The image below displays the convergence of the dual and primal bounds. By comparison to exact solvers, we have observed that the dual bounds converge very quickly to the best value, while the primal bounds tend to be somewhat stagnant. This suggests finding a better primal construction method will lead to more precise bounds and faster convergence.
-
+EDIT: see new section on local search.
 ![Dual Primal comparison](img/dual-primal.png)
+
+### Local Search
+We implement a local search algorithm inspired from the 2-opt algorithm for TSP which finds very good primal solutions, often within $1-2%$ of the optimal value. It is however somewhat more expensive to compute than the other reconstruction, so we only run it at the end of computation. 
+
+![Local Search](img/local_search.png)
 
 ## Solver Comparison
 
