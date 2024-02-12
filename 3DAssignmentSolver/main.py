@@ -11,13 +11,14 @@ class Solver:
         learning_rate_scale="1/k",
         algorithm="nesterov",
         beta=0.95,
-        search_size=10,
+        search_size=0.01,
         learning_rate=0.1,
-        max_iterations=1000,
+        max_iterations=200,
         threshold=0.05,
         verbosity=False,
-        local_search=True,
-        local_search_all=False
+        local_search=False,
+        local_search_all=False,
+        op_solver = True,
     ):
         """
         Initialize the Solver object with specified parameters.
@@ -42,6 +43,7 @@ class Solver:
         self._verbosity = verbosity
         self._local_search = local_search
         self._local_search_all = local_search_all
+        self._op_solver = op_solver
 
     @property
     def threshold(self):
@@ -165,6 +167,10 @@ class Solver:
                 ct += 1
         
         if self.is_feasible(x):
+            print("hi")
+            print(self.value(x))
+            x = self.local_process(x)
+            print(self.value(x))
             return x
         else:
             return None
@@ -190,7 +196,7 @@ class Solver:
         sol = self.local_constructor(x)
         val = self.value(sol)
         
-        return val
+        return sol, val
         
   
 
@@ -265,10 +271,11 @@ class Solver:
 
         # print("best-val: ", best_value)
         if self._local_search:
-            local_construct_val = self.local_construct()
+            sol, val = self.local_construct()
             # print("local-val: ", local_construct_val)
-            if local_construct_val is not None and local_construct_val > best_value:
+            if val is not None and val > best_value:
                 best_value = local_construct_val
+                best_sol = sol
 
         dual_bounds = [dual_value]
         primal_bounds = [best_value]
@@ -300,7 +307,14 @@ class Solver:
             u = u - self.compute_learning_rate(k) * subgradient
 
             k += 1
+                    
+        print(self.is_feasible(best_sol), self.value(best_sol))
+        best_sol = self.local_process(best_sol)
+        best_value = self.value(best_sol)
+        print(self.is_feasible(best_sol), self.value(best_sol))
 
+        dual_bounds.append(dual_bounds[-1])
+        primal_bounds.append(best_value)
         return dual_bounds, primal_bounds, best_sol, best_value
 
     def nesterov_accelerated_gradient(self, initial_point):
@@ -332,14 +346,14 @@ class Solver:
 
         best_sol = self.construct(x_point)
         best_value = self.value(best_sol)
-
-
+ 
         # print("best-val: ", best_value)
         if self._local_search:
-            local_construct_val = self.local_construct()
+            sol, val = self.local_construct()
             # print("local-val: ", local_construct_val)
-            if local_construct_val is not None and local_construct_val > best_value:
-                best_value = local_construct_val
+            if val is not None and val > best_value:
+                best_value = val
+                best_sol = sol
 
         dual_bounds = [dual_value]
         primal_bounds = [best_value]
@@ -356,6 +370,7 @@ class Solver:
             primal_value = self.value(primal_construction)
 
             # Update best primal solution and value
+
             if primal_value > best_value:
                 best_value = primal_value
                 best_sol = primal_construction
@@ -384,6 +399,13 @@ class Solver:
 
             k += 1
 
+        print(self.is_feasible(best_sol), self.value(best_sol))
+        best_sol = self.local_process(best_sol)
+        best_value = self.value(best_sol)
+        print(self.is_feasible(best_sol), self.value(best_sol))
+
+        dual_bounds.append(dual_bounds[-1])
+        primal_bounds.append(best_value)
         return dual_bounds, primal_bounds, best_sol, best_value
 
 
@@ -421,9 +443,188 @@ class Solver:
             float: Objective function value.
         """
         return np.sum(self.C * x)
-    
 
- 
+    def local_process(self, x):
+        if not self._op_solver:
+            return x
+        I = np.zeros((self.N, self.N))
+        J = np.zeros((self.N, self.N))
+        K = np.zeros((self.N, self.N))
+
+        while True:
+
+            for i1 in range(self.N):
+                for i2 in range(self.N):
+                    j1, k1 = np.where(x[i1,:,:])
+                    j2, k2 = np.where(x[i2,:,:])
+                    I[i1, i2] = self.C[i2, j1, k1].sum() + self.C[i1, j2, k2].sum() - self.C[i1, j1, k1].sum() - self.C[i2, j2, k2].sum()
+
+
+            for j1 in range(self.N):
+                for j2 in range(self.N):
+                    i1, k1 = np.where(x[:,j1,:])
+                    i2, k2 = np.where(x[:,j2,:])
+                    J[j1, j2] = self.C[i1, j2, k1].sum() + self.C[i2, j1, k2].sum() - self.C[i1, j1, k1].sum() - self.C[i2, j2, k2].sum()
+
+            for k1 in range(self.N):
+                for k2 in range(self.N):
+                    i1, j1 = np.where(x[:,:,k1])
+                    i2, j2 = np.where(x[:,:,k2])
+                    K[k1, k2] = self.C[i1, j1, k2].sum() + self.C[i2, j2, k1].sum() - self.C[i1, j1, k1].sum() - self.C[i2, j2, k2].sum()
+
+            max_I_value = np.max(I)
+
+            max_I_indices = np.unravel_index(np.argmax(I), I.shape)
+            max_J_value = np.max(J)
+
+            max_J_indices = np.unravel_index(np.argmax(J), J.shape)
+            max_K_value = np.max(K)
+
+            max_K_indices = np.unravel_index(np.argmax(K), K.shape)
+
+
+            if max_I_value <= 0 and max_J_value <= 0 and max_K_value <= 0:
+                break
+
+            if max_I_value >= max_J_value and max_I_value >= max_K_value:
+                if max_I_value > 0:
+                    i1, i2 = max_I_indices
+                    j1, k1 = np.where(x[i1, :, :])
+                    j2, k2 = np.where(x[i2, :, :])
+
+                    x[i1, j1, k1] = 0
+                    x[i2, j2, k2] = 0
+                    x[i2, j1, k1] = 1
+                    x[i1, j2, k2] = 1
+
+            elif max_J_value >= max_I_value and max_J_value >= max_K_value:
+                if max_J_value > 0:
+                    j1, j2 = max_J_indices
+                    i1, k1 = np.where(x[:, j1, :])
+                    i2, k2 = np.where(x[:, j2, :])
+
+                    x[i1, j1, k1] = 0
+                    x[i2, j2, k2] = 0
+                    x[i1, j2, k1] = 1
+                    x[i2, j1, k2] = 1  
+
+            else:
+                if max_K_value > 0:
+                    k1, k2 = max_K_indices
+                    i1, j1 = np.where(x[:, :, k1])
+                    i2, j2 = np.where(x[:, :, k2])
+
+                    x[i1, j1, k1] = 0
+                    x[i2, j2, k2] = 0
+                    x[i1, j1, k2] = 1
+                    x[i2, j2, k1] = 1
+
+        return x
+         
+
+    # # def local_process(self, x):
+    #     return x
+    #     non_zero_indices = np.nonzero(x)
+
+    #     I = np.zeros((N, N))
+    #     for idx1 in range(N):
+    #         for idx2 in range(N):
+    #             i1, j1, k1 = non_zero_indices[0][idx1], non_zero_indices[1][idx1], non_zero_indices[2][idx1]
+    #             i2, j2, k2 = non_zero_indices[0][idx2], non_zero_indices[1][idx2], non_zero_indices[2][idx2]
+    #             I[idx1, idx2] = C[i2, j1, k1] + C[i1, j2, k2] - C[i1, j1, k1] - C[i2, j2, k2]
+
+    #     J = np.zeros((N, N))
+    #     for idx1 in range(N):
+    #         for idx2 in range(N):
+    #             i1, j1, k1 = non_zero_indices[0][idx1], non_zero_indices[1][idx1], non_zero_indices[2][idx1]
+    #             i2, j2, k2 = non_zero_indices[0][idx2], non_zero_indices[1][idx2], non_zero_indices[2][idx2]
+    #             J[idx1, idx2] = C[i1, j2, k1] + C[i2, j1, k2] - C[i1, j1, k1] - C[i2, j2, k2]
+
+    #     K = np.zeros((N, N))
+    #     for idx1 in range(N):
+    #         for idx2 in range(N):
+    #             i1, j1, k1 = non_zero_indices[0][idx1], non_zero_indices[1][idx1], non_zero_indices[2][idx1]
+    #             i2, j2, k2 = non_zero_indices[0][idx2], non_zero_indices[1][idx2], non_zero_indices[2][idx2]
+    #             K[idx1, idx2] = C[i1, j1, k2] + C[i2, j2, k1] - C[i1, j1, k1] - C[i2, j2, k2]
+        
+    #     while True:
+    #         max_I_value = np.max(I)
+    #         max_I_indices = np.unravel_index(np.argmax(I), I.shape)
+
+    #         max_J_value = np.max(J)
+    #         max_J_indices = np.unravel_index(np.argmax(J), J.shape)
+
+    #         max_K_value = np.max(K)
+    #         max_K_indices = np.unravel_index(np.argmax(K), K.shape)
+            
+    #         if max_I_value <= 0 and max_J_value <= 0 and max_K_value <= 0:
+    #             break
+
+    #         if max_I_value >= max_J_value and max_I_value >= max_K_value:
+    #             if max_I_value > 0:
+
+    #                 i1, i2 = max_I_indices
+    #                 j1, k1 = np.where(x[i1, :, :])
+    #                 j2, k2 = np.where(x[i2, :, :])
+
+    #                 x[i1, j1, k1] = 0
+    #                 x[i2, j2, k2] = 0
+    #                 x[i2, j1, k1] = 1
+    #                 x[i1, j2, k2] = 1
+                    
+    #                 J[j1, j2] -= max_I_value
+    #                 J[j2, j1] -= max_I_value
+                    
+    #                 K[k1, k2] -= max_I_value
+    #                 K[k2, k1] -= max_I_value
+                    
+    #                 I[i1, i2] = 0
+    #                 I[i2, i1] = 0
+
+    #         elif max_J_value >= max_I_value and max_J_value >= max_K_value:
+    #             if max_J_value > 0:
+
+    #                 j1, j2 = max_J_indices
+    #                 i1, k1 = np.where(x[:, j1, :])
+    #                 i2, k2 = np.where(x[:, j2, :])
+
+    #                 x[i1, j1, k1] = 0
+    #                 x[i2, j2, k2] = 0
+    #                 x[i1, j2, k1] = 1
+    #                 x[i2, j1, k2] = 1
+
+    #                 I[i1, i2] -= max_J_value
+    #                 I[i2, i1] -= max_J_value
+                    
+    #                 K[k1, k2] -= max_J_value
+    #                 K[k2, k1] -= max_J_value
+                    
+    #                 J[j1, j2] = 0
+    #                 J[j2, j1] = 0
+
+    #         else:
+    #             if max_K_value > 0:
+                    
+    #                 k1, k2 = max_K_indices    
+    #                 i1, j1 = np.where(x[:, :, k1])
+    #                 i2, j2 = np.where(x[:, :, k2])
+
+    #                 x[i1, j1, k1] = 0
+    #                 x[i2, j2, k2] = 0
+    #                 x[i1, j1, k2] = 1
+    #                 x[i2, j2, k1] = 1
+
+    #                 I[i1, i2] -= max_K_value
+    #                 I[i2, i1] -= max_K_value
+                    
+    #                 J[j1, j2] -= max_K_value
+    #                 J[j2, j1] -= max_K_value
+                    
+    #                 K[k1, k2] = 0
+    #                 K[k2, k1] = 0
+            
+
+
     def optimize(self, C):
         """
         Optimize the objective function using the selected algorithm.

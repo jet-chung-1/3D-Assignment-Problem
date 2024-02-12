@@ -29,6 +29,8 @@ def create_problems(N, num_problems, scale=100, a=1, b=1, verbosity=True):
     problems = []
     for _ in range(num_problems):
         C = np.random.beta(a,b, size=(N, N, N)) * scale  # Cost matrices are beta in [0, scale]
+        C = np.random.randint(0,scale, size=(N, N, N))  # Cost matrices are beta in [0, scale]
+
         problems.append(C)
 
     if verbosity:
@@ -139,7 +141,7 @@ def duality_visualizer(dual_bounds, primal_bounds, figsize=(8, 6)):
     plt.show()
 
 
-def is_feasible(self, x):
+def is_feasible(x):
     """
     Check if a given solution is feasible.
 
@@ -160,3 +162,18 @@ def is_feasible(self, x):
         return False
     
     return True
+
+def value(x, C):
+    """
+    Compute the value of the objective function for a given primal solution.
+
+    Parameters:
+        x: numpy array
+            Primal solution.
+        C: numpy array
+            Cost matrix.
+
+    Returns:
+        float: Objective function value.
+    """
+    return np.sum(C * x)
