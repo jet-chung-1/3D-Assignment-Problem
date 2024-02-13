@@ -39,14 +39,45 @@ and $\lambda$ is a hyperparameter which was found to give good results with $\la
 
 
 ### Local Search
-We implement a local search algorithm inspired from the 2-opt algorithm for TSP which finds very good primal solutions, often within 1-2% of the optimal value. Using an efficient linked class structure, this method adds very little overhead to the solution, and can solve even very large problems essentially instantly (N = 80 averages around 1.5 seconds). Below we display the convergence of the dual and primal bounds.
+We implement a local search algorithm inspired from the 2-opt algorithm for TSP which finds very good primal solutions.  This method adds very little overhead to the solution. 
+Empirically we have found that the local search give slightly better solutions for very large problems as compared to small or medium problems (often < 1% for large, and between 3-5% for small/medium).
+Below we display the convergence of the dual and primal bounds for a medium sized problem.
 
 ![Local Search](img/local_search.png)
+
+
+## Solver Speed Benchmarking
+We are able to solve even very large problems with up to $500 \times 500 \times 500$ cost matrices to high accuracy within a few minutes:
+
+```
+Primal: 49248.00 <= Value: 49248.00 <= Dual: 49504.81, duality %: 0.52 feasible: True
+
+366.614 <module>  speed_benchmark.py:1
+├─ 260.683 Solver.optimize  main_optimized.py:586
+│  └─ 260.682 Solver.nesterov_accelerated_gradient  main_optimized.py:133
+│     ├─ 212.489 Solver.objective_func  main_optimized.py:62
+│     │  ├─ 182.561 [self]  main_optimized.py
+│     │  └─ 27.455 argmax  numpy/core/fromnumeric.py:1140
+│     │        [3 frames hidden]  numpy, <built-in>
+│     ├─ 33.842 Solver.local_process  main_optimized.py:256
+│     │  ├─ 10.019 swap_I  main_optimized.py:257
+│     │  ├─ 8.900 swap_J  main_optimized.py:345
+│     │  ├─ 8.504 swap_K  main_optimized.py:428
+│     │  └─ 5.856 [self]  main_optimized.py
+│     └─ 13.827 [self]  main_optimized.py
+├─ 97.895 duality_visualizer  utils.py:109
+│  └─ 97.331 show  matplotlib/pyplot.py:323
+│        [6 frames hidden]  matplotlib, <built-in>
+│           97.301 mainloop  matplotlib/backends/backend_macosx.py:129
+│           ├─ 80.694 [self]  matplotlib/backends/backend_macosx.py
+└─ 5.118 <module>  utils.py:1
+```
+We can see that the local search method is quite fast, and most of the time is spent on evaluating the objective function. 
 
 ## Solver Comparison
 
 - The solver has been benchmarked against Gurobi and PuLP. Across various problem sizes and instances, our solver consistently demonstrates a significant speed-up.
-- The solver halts within 100 iterations or when it approaches within 5% of optimal.
+- The solver halts within 50 iterations or when it approaches within 5% of optimal.
 - For the tests, cost matrix entries are uniformly chosen from the range [0, 100], and all solvers run on the same problems for a given benchmarking instance.
 
 A benchmarking utility is provided to facilitate easy comparison between different solvers. Here is an example:
