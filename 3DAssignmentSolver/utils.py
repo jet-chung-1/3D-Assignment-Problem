@@ -2,11 +2,11 @@ import numpy as np
 import timeit
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 
-from main import Solver
 
-def create_problems(N, num_problems, scale=100, a=1, b=1, verbosity=True):
+from main_optimized import Solver
+
+def create_problems(N, num_problems, scale=100, verbosity=True):
     """
     Create random problem instances.
 
@@ -26,21 +26,12 @@ def create_problems(N, num_problems, scale=100, a=1, b=1, verbosity=True):
         problems: list
             List of problem instances.
     """
-    problems = []
-    for _ in range(num_problems):
-        C = np.random.beta(a,b, size=(N, N, N)) * scale  # Cost matrices are beta in [0, scale]
-        C = np.random.randint(0,scale, size=(N, N, N))  # Cost matrices are beta in [0, scale]
-
-        problems.append(C)
+    problems = [np.random.randint(0, scale, size=(N, N, N)) for _ in range(num_problems)]
 
     if verbosity:
         print("\n")
         print(f"{'-' * 50}")
-        if a == 1 and b == 1:
-            print(f"Created {num_problems} problem instances for size {N} with scale={scale}.")
-            print("Using a uniform distribution (beta = (1, 1)).")
-        else:
-            print(f"Created {num_problems} problem instances for size {N} with scale={scale} and beta={a,b}.")
+        print(f"Created {num_problems} problem instances for size {N} with scale={scale}.")
         print(f"{'-' * 50}")
         print("\n")
 
@@ -88,6 +79,7 @@ def benchmark(problems, solvers, verbosity=True):
                 if verbosity:
                     print(f"Instance {problem_index}: Objective Value: {primal_bounds[-1]:.2f}, Duality % Gap: {100 * fraction:.2f}%")
             else:
+                print(solver_name)
                 primal, _ = solver.optimize(problem)
                 if verbosity:
                     print(f"Instance {problem_index}: Objective Value: {primal:.2f}")
