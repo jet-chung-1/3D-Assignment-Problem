@@ -2,7 +2,7 @@ import numpy as np
 import timeit
 import pandas as pd
 import matplotlib.pyplot as plt
-
+import seaborn as sns
 
 from main_optimized import Solver
 

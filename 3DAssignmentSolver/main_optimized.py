@@ -35,6 +35,7 @@ class Solver:
             
 
         self._verbosity = verbosity
+        self._search_size = search_size
 
 
         if self._verbosity:
@@ -60,20 +61,15 @@ class Solver:
     
     def objective_func(self, u):
         
-        
         sum_C_u = self.C + u
         max_indices = np.argmax(sum_C_u, axis=-1)
-        D = sum_C_u[np.arange(self.N)[:, None], np.arange(self.N), max_indices]
-        
-        
-        
-        
-        # Solve linear assignment problem in 2D (worth noting this is fast)
-        i_indices, j_indices = linear_sum_assignment(-D)
-        
+
+        # Solve linear assignment problem in 2D (fast)
+        cost_matrix = -sum_C_u[np.arange(self.N)[:, None], np.arange(self.N), max_indices]
+        i_indices, j_indices = linear_sum_assignment(cost_matrix)
+
         k_indices = max_indices[i_indices, j_indices]
-        objective_value = np.sum(sum_C_u[i_indices, j_indices, k_indices]) - np.sum(u)
-    
+        objective_value = -np.sum(cost_matrix[i_indices, j_indices])
 
         return objective_value, i_indices, j_indices, k_indices
     
@@ -549,35 +545,36 @@ class Solver:
             max_K_indices = np.unravel_index(np.argmax(K), K.shape)
 
 
-            if max_I_value <= 0 and max_J_value <= 0 and max_K_value <= 0:
+            max_values = [I[max_I_indices], J[max_J_indices], K[max_K_indices]]
+            max_indices = [max_I_indices, max_J_indices, max_K_indices]
+
+            max_index = np.argmax(max_values)
+            max_value = max_values[max_index]
+            max_indices = max_indices[max_index]
+
+            if max_value > 0:
+                if max_index == 0:
+                    if self._verbosity:
+                        print(f"Maximum value found on i-indices with value: {max_I_value} and indices: {max_I_indices}")
+                    i1, i2 = max_indices
+                    swap_I(i1, i2)
+                elif max_index == 1:
+                    if self._verbosity:
+                        print(f"Maximum value found on j-indices with value: {max_J_value} and indices: {max_J_indices}")
+                    j1, j2 = max_indices
+                    swap_J(j1, j2)
+                else:
+                    if self._verbosity:
+                        print(f"Maximum value found on k-indices with value: {max_K_value} and indices: {max_K_indices}")
+                    k1, k2 = max_indices
+                    swap_K(k1, k2)
+
+            else:
                 if self._verbosity:
                     print("No further swaps found. Breaking...")
                     print("-"*20)
                     print("-"*50)
-                break
-
-            if max_I_value >= max_J_value and max_I_value >= max_K_value:
-                if max_I_value > 0:
-                    if self._verbosity:
-                        print(f"Maximum value found on i-indices with value: {max_I_value} and indices: {max_I_indices}")
-                    i1, i2 = max_I_indices
-                    swap_I(i1, i2)
-
-
-            elif max_J_value >= max_I_value and max_J_value >= max_K_value:
-                if max_J_value > 0:
-                    if self._verbosity:
-                        print(f"Maximum value found on j-indices with value: {max_J_value} and indices: {max_J_indices}")
-                    j1, j2 = max_J_indices
-                    swap_J(j1, j2)
-
-            else:
-                if max_K_value > 0:
-                    if self._verbosity:
-                        print(f"Maximum value found on k-indices with value: {max_K_value} and indices: {max_K_indices}")
-                    k1, k2 = max_K_indices
-                    swap_K(k1, k2)
-
+                    break
     
             round += 1
                 
@@ -613,7 +610,6 @@ class Solver:
                 print("Starting optimization...")
                 print(f"Using algorithm: {self._algorithm}")
                 print("-"*50)
-    
             initial_point = np.random.uniform(-self._search_size, self._search_size, self.N)
             if self._algorithm == "subgradient":
                 return self.subgradient_algorithm(initial_point)
