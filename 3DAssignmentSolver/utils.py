@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from main_final import Solver
+from main_optimized import Solver
 
 def create_problems(N, num_problems, scale=100, verbosity=True):
     """
@@ -79,7 +79,6 @@ def benchmark(problems, solvers, verbosity=True):
                 if verbosity:
                     print(f"Instance {problem_index}: Objective Value: {primal_bounds[-1]:.2f}, Duality % Gap: {100 * fraction:.2f}%")
             else:
-                print(solver_name)
                 primal, _ = solver.optimize(problem)
                 if verbosity:
                     print(f"Instance {problem_index}: Objective Value: {primal:.2f}")
@@ -89,11 +88,9 @@ def benchmark(problems, solvers, verbosity=True):
 
         avg_time = np.mean(solver_times[solver_name])
         if isinstance(solver, Solver):
-            percentage_below_threshold = (sum(fraction <= solver._threshold for fraction in fractions) / len(problems)) * 100
             if verbosity:
                 print(f"{'-' * 50}")
                 print(f"Avg. execution time for {solver_name}: {avg_time:.4f} seconds")
-                print(f"Percentage of time fraction < {solver._threshold * 100:.2f}%: {percentage_below_threshold:.2f}%")
                 print(f"{'-' * 50}")
         else:
             if verbosity:
