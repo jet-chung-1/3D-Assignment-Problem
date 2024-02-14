@@ -3,7 +3,7 @@ from scipy.optimize import linear_sum_assignment
 import sys
 
 class Solver:
-    def __init__(self, beta=0.95, learning_rate=0.1, learning_rate_scale="1/k", max_iterations=100, threshold=0.01, verbosity=True,):
+    def __init__(self, beta=0.95, learning_rate=0.1, learning_rate_scale="1/k", max_iterations=100, threshold=0.01, verbosity=True):
 
         self._beta = beta
         self._learning_rate = learning_rate
