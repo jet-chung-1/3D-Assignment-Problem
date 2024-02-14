@@ -15,6 +15,7 @@ class Solver:
         algorithm="nesterov",
         beta=0.95,
         search_size=0.1,
+        num_searches=10,
         learning_rate=0.1,
         max_iterations=100,
         threshold=0.05,
@@ -36,7 +37,7 @@ class Solver:
 
         self._verbosity = verbosity
         self._search_size = search_size
-
+        self._num_searches = num_searches
 
         if self._verbosity:
             print("\n")
@@ -53,23 +54,51 @@ class Solver:
             print("-"*50)
             print("Finished initializing Solver.")
             print("-"*50)
-            print("\n")
              
     @property
     def threshold(self):
         return self._threshold
-    
+            #
+        #
+        # while fraction > self._threshold and k < self._max_iterations:
+        #     if self._verbosity:
+        #         print("-"*20)
+        #         print(f"Iteration {k + 1}:")
+        #         print(f"Primal value: {best_value:.3f}, Dual value: {dual_value:.3f}, Current duality %: {100*fraction:.2f}%")
+        #     # Compute dual objective value and primal solution
+        #
+        #     print("Now performing 2-OPT on new solution")
+        #
+        #     dual_value, i_indices, j_indices, k_indices = self.objective_func(y)
+        #     i_indices, j_indices, k_indices = self.construct(j_indices, k_indices)
+        #
+        #     if (not np.array_equal(i_indices, i_indices_max)) or \
+        #        (not np.array_equal(j_indices, j_indices_max)) or \
+        #        (not np.array_equal(k_indices, k_indices_max)):
+        #         i_indices, j_indices, k_indices = self.local_process(i_indices, j_indices, k_indices, dual_value)
+        #         primal_value = np.sum(self.C[i_indices, j_indices, k_indices])
+        #
+        #
+        #         if primal_value > best_value:
+        #             print(f"Best primal solution updated from {best_value} to {primal_value}.")
+        #             if self._verbosity:
+        #                 print(f"Best primal solution updated from {best_value} to {primal_value}.")
+        #                 best_value = primal_value
+        #                 i_indices_max, j_indices_max, k_indices_max = i_indices, j_indices, k_indices
+        #                 print("UPDATED_SEARCH")
+        #
     def objective_func(self, u):
-        
+
         sum_C_u = self.C + u
         max_indices = np.argmax(sum_C_u, axis=-1)
 
         # Solve linear assignment problem in 2D (fast)
         cost_matrix = -sum_C_u[np.arange(self.N)[:, None], np.arange(self.N), max_indices]
+
         i_indices, j_indices = linear_sum_assignment(cost_matrix)
 
         k_indices = max_indices[i_indices, j_indices]
-        objective_value = -np.sum(cost_matrix[i_indices, j_indices])
+        objective_value = -np.sum(cost_matrix[i_indices, j_indices]) - np.sum(u)
 
         return objective_value, i_indices, j_indices, k_indices
     
@@ -160,9 +189,35 @@ class Solver:
         k = 0 
 
 
-        dual_value, i_indices, j_indices, k_indices = self.objective_func(u)  # Compute dual objective value
-        i_indices_max, j_indices_max, k_indices_max = self.construct(j_indices, k_indices)  # Get primal solution from dual point
-        best_value = np.sum(self.C[i_indices_max, j_indices_max, k_indices_max])  # Calculate primal objective value
+        # reconstruct feasible 
+        print("Starting reconstruction:")
+        
+        dual_value, i_indices_max_y, j_indices_max_y, k_indices_max_y = self.objective_func(u)
+        i_indices_max, j_indices_max, k_indices_max = self.construct(j_indices_max_y, k_indices_max_y)
+        i_indices_max, j_indices_max, k_indices_max = self.local_process(i_indices_max, j_indices_max, k_indices_max, dual_value)
+        reconstruct_value = np.sum(self.C[i_indices_max, j_indices_max, k_indices_max])
+
+        print("Starting random start search:")
+        random_value, indices = self.random_start(dual_value)
+
+        print("Starting greedy search:")
+        i_indices_greedy, j_indices_greedy, k_indices_greedy = self.greedy()
+        greedy_value = np.sum(self.C[i_indices_greedy, j_indices_greedy, k_indices_greedy])
+        i_indices_greedy, j_indices_greedy, k_indices_greedy = self.local_process(i_indices_greedy, j_indices_greedy, k_indices_greedy, dual_value)
+        greedy_value_refined = np.sum(self.C[i_indices_greedy, j_indices_greedy, k_indices_greedy])
+
+        best_value = greedy_value_refined
+        i_indices_max, j_indices_max, k_indices_max = i_indices_greedy, j_indices_greedy, k_indices_greedy
+
+        # # Choose the best solution based on the highest value
+        # best_value = max(reconstruct_value, random_value, greedy_value_refined)
+        # if best_value == reconstruct_value:
+        #     i_indices_max, j_indices_max, k_indices_max = i_indices_max, j_indices_max, k_indices_max
+        # elif best_value == random_value:
+        #     i_indices_max, j_indices_max, k_indices_max = indices
+        # else:
+        #     i_indices_max, j_indices_max, k_indices_max = i_indices_greedy, j_indices_greedy, k_indices_greedy
+        # print(best_value)
 
         dual_bounds = [dual_value]  # Initialize with initial dual objective value
         primal_bounds = [best_value]  # Initialize with initial primal objective value
@@ -171,8 +226,8 @@ class Solver:
 
 
         beta = self._beta
-
-
+        print("\n")
+        print("Starting descent...")
         while fraction > self._threshold and k < self._max_iterations:
             if self._verbosity:
                 print("-"*20)
@@ -182,14 +237,14 @@ class Solver:
             dual_value, i_indices, j_indices, k_indices = self.objective_func(y)
             i_indices, j_indices, k_indices = self.construct(j_indices, k_indices)
             primal_value = np.sum(self.C[i_indices, j_indices, k_indices])
-            
             # Update best primal solution and value
             if primal_value > best_value:
                 if self._verbosity:
                     print(f"Best primal solution updated from {best_value} to {primal_value}.")
-                best_value = primal_value
+
                 i_indices_max, j_indices_max, k_indices_max = i_indices, j_indices, k_indices
-                
+                best_value = np.sum(self.C[i_indices_max, j_indices_max, k_indices_max])
+
 
             # Update fraction for termination condition
             fraction = (dual_value - best_value) / best_value
@@ -225,19 +280,12 @@ class Solver:
 
             print("\n")
             print("Performing local search on primal...")
-            
-        # Perform local processing on the best primal solution found
+
         dual_value = min(dual_bounds)
         
-
-
         i_indices_max, j_indices_max, k_indices_max = self.local_process(i_indices_max, j_indices_max, k_indices_max, dual_value)
         best_value = np.sum(self.C[i_indices_max, j_indices_max, k_indices_max])
-        if self._verbosity:
-            fraction = (dual_value - best_value)/best_value
-            print("\n")
-            print(f"Local search optimal value: {best_value:.3f},  dual value: {dual_value:.3f} and duality %: {100*fraction:.2f}%")
-            print("-"*20)
+        
         # Append the last dual objective value to the list
         dual_bounds.append(dual_value)
         # Append the final primal objective value to the list
@@ -245,10 +293,55 @@ class Solver:
         if self._verbosity:
             print(f"Finished optimization")
 
+            print("-" * 50)
+            print("Search Values")
+            print(f"Reconstruct value: {reconstruct_value}")
+            print(f"Random start value: {random_value}")
+            print(f"Greedy value: {greedy_value}")
+            print(f"Greedy + 2OPT value: {greedy_value_refined}")
+        
+
         # Return the results
         best_sol_coords = [i_indices_max, j_indices_max, k_indices_max]
         return dual_bounds, primal_bounds, best_sol_coords, best_value
 
+    def greedy(self):
+        i_indices = []
+        j_indices = []
+        k_indices = []
+
+        C = self.C.copy()
+        for _ in range(self.N):
+            
+            max_index = np.argmax(C)
+            max_i, max_j, max_k = np.unravel_index(max_index, C.shape) 
+            
+            i_indices.append(max_i)
+            j_indices.append(max_j)
+            k_indices.append(max_k)
+            #sketchy hack bc -np.inf doesn't work
+            C[max_i, :, :] = -100
+            C[:, max_j, :] = -100
+            C[:, :, max_k] = -100
+
+        return i_indices, j_indices, k_indices
+    def random_start(self, dual_value):
+        best_indices = None
+        best_value = float('-inf')
+        
+        for _ in range(self._num_searches):
+            i_indices = np.arange(0, self.N)
+            j_indices = np.random.permutation(np.arange(0, self.N))
+            k_indices = np.random.permutation(np.arange(0, self.N))
+
+            i_indices, j_indices, k_indices = self.local_process(i_indices, j_indices, k_indices, dual_value)
+
+            current_value = np.sum(self.C[i_indices, j_indices, k_indices])
+            if current_value > best_value:
+                best_value = current_value
+                best_indices = (i_indices, j_indices, k_indices)
+        
+        return best_value, best_indices
 
 
     def local_process(self, i_indices, j_indices, k_indices, dual_value):
@@ -572,15 +665,19 @@ class Solver:
             else:
                 if self._verbosity:
                     print("No further swaps found. Breaking...")
-                    print("-"*20)
                     print("-"*50)
+                    print("\n")
                     break
     
             round += 1
                 
         return indices[:, 0], indices[:, 1], indices[:, 2]
     
- 
+    def is_feasible(self, x):
+        if len(np.unique(x[0])) + len(np.unique(x[1])) + len(np.unique(x[2])) < 3*self.N:
+            return False
+        return True
+        
     def optimize(self, C):
         """
         Optimize the objective function using the selected algorithm.
@@ -611,6 +708,7 @@ class Solver:
                 print(f"Using algorithm: {self._algorithm}")
                 print("-"*50)
             initial_point = np.random.uniform(-self._search_size, self._search_size, self.N)
+            
             if self._algorithm == "subgradient":
                 return self.subgradient_algorithm(initial_point)
             else:
