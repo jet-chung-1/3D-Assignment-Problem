@@ -26,7 +26,7 @@ def create_problems(N, num_problems, scale=100, verbosity=True):
         problems: list
             List of problem instances.
     """
-    problems = [np.random.randint(0, scale, size=(N, N, N)) for _ in range(num_problems)]
+    problems = [np.random.uniform(0, scale, size=(N, N, N)) for _ in range(num_problems)]
 
     if verbosity:
         print("\n")
