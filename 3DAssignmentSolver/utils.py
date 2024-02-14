@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from main_optimized import Solver
+from main_final import Solver
 
 def create_problems(N, num_problems, scale=100, verbosity=True):
     """

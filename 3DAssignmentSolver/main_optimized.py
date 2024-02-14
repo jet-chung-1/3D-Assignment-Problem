@@ -182,14 +182,11 @@ class Solver:
             print("Starting Nesterov accelerated gradient algorithm...")
             print("-"*50)
 
-        # Initialize variables
-        u = np.array(initial_point)  # Initialize u with the provided initial point
-        y = np.array(initial_point)  # Initialize y with the provided initial point
+        u = np.array(initial_point) 
+        y = np.array(initial_point) 
 
         k = 0 
 
-
-        # reconstruct feasible 
         print("Starting reconstruction:")
         
         dual_value, i_indices_max_y, j_indices_max_y, k_indices_max_y = self.objective_func(u)
@@ -209,15 +206,15 @@ class Solver:
         best_value = greedy_value_refined
         i_indices_max, j_indices_max, k_indices_max = i_indices_greedy, j_indices_greedy, k_indices_greedy
 
-        # # Choose the best solution based on the highest value
-        # best_value = max(reconstruct_value, random_value, greedy_value_refined)
-        # if best_value == reconstruct_value:
-        #     i_indices_max, j_indices_max, k_indices_max = i_indices_max, j_indices_max, k_indices_max
-        # elif best_value == random_value:
-        #     i_indices_max, j_indices_max, k_indices_max = indices
-        # else:
-        #     i_indices_max, j_indices_max, k_indices_max = i_indices_greedy, j_indices_greedy, k_indices_greedy
-        # print(best_value)
+        # Choose the best solution based on the highest value
+        best_value = max(reconstruct_value, random_value, greedy_value_refined)
+        if best_value == reconstruct_value:
+            i_indices_max, j_indices_max, k_indices_max = i_indices_max, j_indices_max, k_indices_max
+        elif best_value == random_value:
+            i_indices_max, j_indices_max, k_indices_max = indices
+        else:
+            i_indices_max, j_indices_max, k_indices_max = i_indices_greedy, j_indices_greedy, k_indices_greedy
+        print(best_value)
 
         dual_bounds = [dual_value]  # Initialize with initial dual objective value
         primal_bounds = [best_value]  # Initialize with initial primal objective value
@@ -286,21 +283,22 @@ class Solver:
         i_indices_max, j_indices_max, k_indices_max = self.local_process(i_indices_max, j_indices_max, k_indices_max, dual_value)
         best_value = np.sum(self.C[i_indices_max, j_indices_max, k_indices_max])
         
-        # Append the last dual objective value to the list
         dual_bounds.append(dual_value)
-        # Append the final primal objective value to the list
         primal_bounds.append(best_value)
+        
         if self._verbosity:
             print(f"Finished optimization")
 
             print("-" * 50)
-            print("Search Values")
-            print(f"Reconstruct value: {reconstruct_value}")
-            print(f"Random start value: {random_value}")
+            print("SEARCH VALUES")
+            print("-"*20)
+            print(f"Random + 2OPT value: {random_value}")
+            print(f"Reconstruction + 2OPT value: {reconstruct_value}")
             print(f"Greedy value: {greedy_value}")
             print(f"Greedy + 2OPT value: {greedy_value_refined}")
-        
-
+            print(f"Best value: {best_value}")
+            print("-"*20)
+            print("-"*50)
         # Return the results
         best_sol_coords = [i_indices_max, j_indices_max, k_indices_max]
         return dual_bounds, primal_bounds, best_sol_coords, best_value
